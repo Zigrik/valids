@@ -1,0 +1,166 @@
+// Package valids provides IP address validation utilities.
+//
+// The package includes functions to validate IPv4 and IPv6 addresses,
+// determine the type of IP address, and perform basic format checks.
+//
+// Features:
+//   - IPv4 validation with octet range checking
+//   - IPv6 validation with hexadecimal format checking
+//   - Automatic IP type detection
+//   - Simple and efficient string-based validation
+//
+// Example usage:
+//
+//	valid := valids.IsValidIP("192.168.1.1")
+//	ipType := valids.TypeOfIP("2001:db8::1")
+package valids
+
+import (
+	"strconv"
+	"strings"
+)
+
+// IsValidIP4 validates whether a string is a valid IPv4 address.
+//
+// The function checks:
+//   - Format: exactly 4 octets separated by dots
+//   - Octet length: each octet must be 1-3 characters long
+//   - Leading zeros: octets with leading zeros are invalid (except "0")
+//   - Value range: each octet must be between 0 and 255
+//
+// Parameters:
+//
+//	input - string to validate as IPv4 address
+//
+// Returns:
+//
+//	true if the input is a valid IPv4 address, false otherwise
+//
+// Example:
+//
+//	isValid := IsValidIP4("192.168.1.1") // returns true
+//	isValid := IsValidIP4("192.168.01.1") // returns false (leading zero)
+func IsValidIP4(input string) bool {
+	arr := strings.Split(input, ".")
+	if len(arr) != 4 {
+		return false
+	}
+	for _, s := range arr {
+		if len(s) < 1 || len(s) > 3 {
+			return false
+		}
+		r := []rune(s)
+		if len(r) == 1 {
+			continue
+		}
+		if r[0] == '0' {
+			return false
+		}
+		num, err := strconv.Atoi(s)
+		if err == nil && num < 256 {
+			continue
+		}
+	}
+	return true
+}
+
+// IsValidIP6 validates whether a string is a valid IPv6 address.
+//
+// The function checks:
+//   - Format: exactly 8 hextets separated by colons
+//   - Hextet length: each hextet must be 1-4 characters long
+//   - Hexadecimal characters: only 0-9, a-f, A-F are allowed
+//
+// Note: This implementation uses simplified validation and does not
+// handle compressed notation (::) or mixed IPv6/IPv4 formats.
+//
+// Parameters:
+//
+//	input - string to validate as IPv6 address
+//
+// Returns:
+//
+//	true if the input is a valid IPv6 address, false otherwise
+//
+// Example:
+//
+//	isValid := IsValidIP6("2001:0db8:85a3:0000:0000:8a2e:0370:7334") // true
+//	isValid := IsValidIP6("2001:db8::1") // false (compressed notation not supported)
+func IsValidIP6(input string) bool {
+	arr := strings.Split(input, ":")
+	if len(arr) != 8 {
+		return false
+	}
+	for _, s := range arr {
+		if s == "" || len(s) > 4 {
+			return false
+		}
+		r := []rune(s)
+		for _, v := range r {
+			if (v >= 97 && v <= 102) || (v >= 48 && v <= 57) || (v >= 65 && v <= 70) {
+				continue
+			} else {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// IsValidIP validates whether a string is a valid IP address (IPv4 or IPv6).
+//
+// The function sequentially checks IPv4 first, then IPv6 validation.
+// Returns true if either validation passes.
+//
+// Parameters:
+//
+//	input - string to validate as IP address
+//
+// Returns:
+//
+//	true if the input is a valid IPv4 or IPv6 address, false otherwise
+//
+// Example:
+//
+//	isValid := IsValidIP("192.168.1.1") // true
+//	isValid := IsValidIP("2001:db8:85a3::8a2e:370:7334") // false (compressed notation)
+//	isValid := IsValidIP("invalid") // false
+func IsValidIP(input string) bool {
+	result := IsValidIP4(input)
+	if result {
+		return true
+	}
+	result = IsValidIP6(input)
+	if result {
+		return true
+	}
+	return false
+}
+
+// TypeOfIP determines the type of IP address if it is valid.
+//
+// Parameters:
+//
+//	input - string to analyze
+//
+// Returns:
+//
+//	"IPv4" if the input is a valid IPv4 address,
+//	"IPv6" if the input is a valid IPv6 address,
+//	"not valid" if the input is not a valid IP address
+//
+// Example:
+//
+//	ipType := TypeOfIP("192.168.1.1") // returns "IPv4"
+//	ipType := TypeOfIP("278.00.590.3") // returns "not valid"
+func TypeOfIP(input string) string {
+	result := IsValidIP4(input)
+	if result {
+		return "IPv4"
+	}
+	result = IsValidIP6(input)
+	if result {
+		return "IPv6"
+	}
+	return "not valid"
+}
